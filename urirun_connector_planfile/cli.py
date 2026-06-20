@@ -4,14 +4,13 @@
 from __future__ import annotations
 
 import argparse
-import json
 import sys
+
+import urirun
 
 from .core import connector_manifest, run_action, urirun_bindings
 
 
-def emit(payload: dict) -> None:
-    print(json.dumps(payload, indent=2, ensure_ascii=False, sort_keys=True))
 
 
 def _add_common(parser: argparse.ArgumentParser) -> None:
@@ -22,9 +21,7 @@ def _add_ticket_id(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--ticket-id", default="")
 
 
-def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="urirun-planfile")
-    sub = parser.add_subparsers(dest="command", required=True)
+def register(sub) -> None:
 
     list_parser = sub.add_parser("list", help="List planfile tickets")
     _add_common(list_parser)
@@ -76,25 +73,28 @@ def main(argv: list[str] | None = None) -> int:
     _add_common(dsl_parser)
     dsl_parser.add_argument("--command", required=True)
 
-    sub.add_parser("manifest", help="Emit connect.ifuri.com connector manifest")
-    sub.add_parser("bindings", help="Emit urirun v2 bindings")
 
-    args = parser.parse_args(argv)
+def dispatch(args) -> int:
     data = vars(args)
     command = data.pop("command")
-    if command == "manifest":
-        emit(connector_manifest())
-        return 0
-    if command == "bindings":
-        emit(urirun_bindings())
-        return 0
     try:
         result = run_action(command, **data)
-    except Exception as exc:  # noqa: BLE001 - CLI reports connector failures as JSON.
-        emit({"ok": False, "connector": "planfile", "action": command, "error": str(exc)})
+    except Exception as exc:  # noqa: BLE001 - connector CLI reports JSON errors.
+        urirun.connector_emit({"ok": False, "connector": "planfile", "action": command, "error": str(exc)})
         return 2
-    emit(result)
+    urirun.connector_emit(result)
     return 0 if result.get("ok") else 2
+
+
+def main(argv: list[str] | None = None) -> int:
+    return urirun.connector_cli(
+        "urirun-planfile",
+        manifest=connector_manifest,
+        bindings=urirun_bindings,
+        register=register,
+        dispatch=dispatch,
+        argv=argv,
+    )
 
 
 if __name__ == "__main__":

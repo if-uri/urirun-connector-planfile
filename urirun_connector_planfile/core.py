@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import json
-from importlib import resources
 from pathlib import Path
 from typing import Any
 
@@ -15,16 +14,8 @@ CONNECTOR_ID = "planfile"
 TASK_CONNECTOR = urirun.connector(CONNECTOR_ID, scheme="task")
 
 
-def _json_resource(name: str) -> dict[str, Any]:
-    text = resources.files(__package__).joinpath(name).read_text(encoding="utf-8")
-    data = json.loads(text)
-    if not isinstance(data, dict):
-        raise ValueError(f"{name} must contain a JSON object")
-    return data
-
-
 def connector_manifest() -> dict[str, Any]:
-    return _json_resource("connector.manifest.json")
+    return urirun.load_manifest(__package__)
 
 
 def _imports() -> dict[str, Any]:
