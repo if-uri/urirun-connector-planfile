@@ -1,6 +1,11 @@
 {
   "id": "planfile",
   "name": "Planfile",
+  "status": "available",
+  "uriSchemes": [
+    "task",
+    "planfile"
+  ],
   "description": "Manage planfile tickets through URI commands.",
   "version": "0.1.1",
   "homepage": "https://connect.ifuri.com/connectors/planfile",

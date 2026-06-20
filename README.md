@@ -34,6 +34,14 @@ urirun run 'task://host/tickets/query/list' planfile.registry.json \
   --execute --allow 'task://host/*'
 ```
 
+After installation, `urirun` can discover this connector automatically through
+the `urirun.bindings` entry-point group:
+
+```bash
+urirun discover --out connectors.bindings.json --registry-out connectors.registry.json
+urirun list --entry-points
+```
+
 The bindings are generated from decorator declarations in
 `urirun_connector_planfile.core`; the Planfile runtime is owned by this
 connector package instead of the `urirun` core runtime.

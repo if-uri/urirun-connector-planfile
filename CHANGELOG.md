@@ -5,6 +5,8 @@
 ### Added
 - Add follow-up tasks for IFURI-016 matrix coverage and richer Planfile route
   documentation.
+- Expose `urirun_bindings()` through the `urirun.bindings` entry-point group
+  and document `urirun discover` / `urirun list --entry-points`.
 
 ### Changed
 - Link README related projects to the `if-uri/urirun` runtime repository.
