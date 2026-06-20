@@ -37,3 +37,14 @@ urirun run 'task://host/tickets/query/list' planfile.registry.json \
 The bindings are generated from decorator declarations in
 `urirun_connector_planfile.core`; the Planfile runtime is owned by this
 connector package instead of the `urirun` core runtime.
+
+## Related projects
+
+- Runtime: [tellmesh/urirun](https://github.com/tellmesh/urirun)
+- Docs: [docs.ifuri.com/connectors.html](https://docs.ifuri.com/connectors.html) · [authoring a connector](https://docs.ifuri.com/connector-authoring.html)
+- Hub page: [connect.ifuri.com/connectors/planfile](https://connect.ifuri.com/connectors/planfile)
+- Connector hub: [connect.ifuri.com](https://connect.ifuri.com)
+- Examples: [if-uri/examples](https://github.com/if-uri/examples)
+- Work summary: [work-summary-2026-06-20](https://github.com/if-uri/docs/blob/main/work-summary-2026-06-20.md)
+
+Repository notes: [TODO.md](TODO.md) · [CHANGELOG.md](CHANGELOG.md)
