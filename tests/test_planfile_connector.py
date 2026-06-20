@@ -6,14 +6,14 @@ import sys
 import tempfile
 from pathlib import Path
 
-import urirun
+from urirun import v2
 from urirun_connector_planfile import connector_manifest, create_ticket, list_tickets, run_dsl, urirun_bindings
 from urirun_connector_planfile.cli import main
 
 
 def _compile_registry(bindings: dict):
-    registry = urirun.compile_registry(bindings)
-    return registry, urirun.list_routes(registry)
+    registry = v2.compile_registry(bindings)
+    return registry, v2.list_routes(registry)
 
 
 def test_manifest_shape() -> None:
@@ -77,7 +77,7 @@ def test_urirun_executes_planfile_connector_uri() -> None:
         os.environ["PATH"] = f"{bin_dir}{os.pathsep}{previous_path}"
         registry, _routes = _compile_registry(urirun_bindings())
         try:
-            create_result = urirun.run(
+            create_result = v2.run(
                 "task://host/ticket/command/create",
                 registry,
                 {"project": tmp, "name": "URI ticket", "queue": "daily"},
@@ -88,7 +88,7 @@ def test_urirun_executes_planfile_connector_uri() -> None:
             stdout = json.loads(create_result["result"]["stdout"])
             assert stdout["ticket"]["name"] == "URI ticket"
 
-            list_result = urirun.run(
+            list_result = v2.run(
                 "task://host/tickets/query/list",
                 registry,
                 {"project": tmp, "queue": "daily"},

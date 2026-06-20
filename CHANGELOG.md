@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+- Link README related projects to the `if-uri/urirun` runtime repository.
+- Mark the connector hub detail page as published.
+- Update tests to call the explicit `urirun.v2` runtime API.
+
 ## [0.1.1] - 2026-06-20
 
 ### Changed
