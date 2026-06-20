@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "urirun-connector-planfile"
-version = "0.1.0"
+version = "0.1.1"
 description = "Planfile task connector for ifuri and urirun"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -12,7 +12,7 @@ license = "Apache-2.0"
 authors = [{ name = "if-uri" }]
 dependencies = [
   "planfile>=0.1.103",
-  "urirun @ git+https://github.com/tellmesh/urirun.git@v0.3.14#subdirectory=adapters/python",
+  "urirun @ git+https://github.com/if-uri/urirun.git@v0.3.14#subdirectory=adapters/python",
 ]
 
 [project.optional-dependencies]

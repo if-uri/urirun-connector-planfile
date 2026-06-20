@@ -2,10 +2,10 @@
   "id": "planfile",
   "name": "Planfile",
   "description": "Manage planfile tickets through URI commands.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "homepage": "https://connect.ifuri.com/connectors/planfile",
   "repository": "https://github.com/if-uri/urirun-connector-planfile",
-  "install": "pip install git+https://github.com/if-uri/urirun-connector-planfile.git",
+  "install": "pip install git+https://github.com/if-uri/urirun-connector-planfile.git@v0.1.1",
   "routes": [
     "task://host/tickets/query/list",
     "task://host/ticket/query/next",

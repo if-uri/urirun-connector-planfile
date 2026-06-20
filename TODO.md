@@ -1,6 +1,6 @@
 # TODO
 
-- [ ] Publish `if-uri/urirun-connector-planfile`.
+- [x] Publish `if-uri/urirun-connector-planfile`.
 - [ ] Add connector detail page to `connect.ifuri.com`.
 - [ ] Add entry-point based discovery once `urirun` finalizes the connector
       discovery contract.

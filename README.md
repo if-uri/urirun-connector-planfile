@@ -19,7 +19,7 @@ Routes:
 Install from GitHub:
 
 ```bash
-pip install "git+https://github.com/if-uri/urirun-connector-planfile.git"
+pip install "git+https://github.com/if-uri/urirun-connector-planfile.git@v0.1.1"
 ```
 
 Use directly:
