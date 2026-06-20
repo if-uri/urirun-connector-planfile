@@ -5,7 +5,10 @@
   "version": "0.1.1",
   "homepage": "https://connect.ifuri.com/connectors/planfile",
   "repository": "https://github.com/if-uri/urirun-connector-planfile",
-  "install": "pip install git+https://github.com/if-uri/urirun-connector-planfile.git@v0.1.1",
+  "install": {
+    "mode": "urirun-extra",
+    "pipSpec": "urirun-connector-planfile @ git+https://github.com/if-uri/urirun-connector-planfile.git@v0.1.1"
+  },
   "routes": [
     "task://host/tickets/query/list",
     "task://host/ticket/query/next",

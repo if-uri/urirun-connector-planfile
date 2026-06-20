@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+- Add follow-up tasks for IFURI-016 matrix coverage and richer Planfile route
+  documentation.
+
 ### Changed
 - Link README related projects to the `if-uri/urirun` runtime repository.
 - Mark the connector hub detail page as published.
