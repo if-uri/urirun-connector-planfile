@@ -1,0 +1,10 @@
+.git
+.pytest_cache
+.ruff_cache
+.docker-smoke
+__pycache__
+*.egg-info
+build
+dist
+venv
+.venv

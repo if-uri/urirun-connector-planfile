@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "urirun-connector-planfile"
+version = "0.1.0"
+description = "Planfile task connector for ifuri and urirun"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+authors = [{ name = "if-uri" }]
+dependencies = [
+  "planfile>=0.1.103",
+  "urirun @ git+https://github.com/tellmesh/urirun.git@v0.3.14#subdirectory=adapters/python",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[project.urls]
+Homepage = "https://connect.ifuri.com/connectors/planfile"
+Repository = "https://github.com/if-uri/urirun-connector-planfile"
+
+[project.scripts]
+urirun-planfile = "urirun_connector_planfile.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["urirun_connector_planfile*"]
+
+[tool.setuptools.package-data]
+urirun_connector_planfile = ["connector.manifest.json"]

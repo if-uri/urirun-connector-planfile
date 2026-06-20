@@ -1,0 +1,23 @@
+{
+  "id": "planfile",
+  "name": "Planfile",
+  "description": "Manage planfile tickets through URI commands.",
+  "version": "0.1.0",
+  "homepage": "https://connect.ifuri.com/connectors/planfile",
+  "repository": "https://github.com/if-uri/urirun-connector-planfile",
+  "install": "pip install git+https://github.com/if-uri/urirun-connector-planfile.git",
+  "routes": [
+    "task://host/tickets/query/list",
+    "task://host/ticket/query/next",
+    "task://host/ticket/query/show",
+    "task://host/ticket/command/create",
+    "task://host/ticket/command/start",
+    "task://host/ticket/command/complete",
+    "task://host/ticket/command/fail",
+    "task://host/ticket/command/block",
+    "task://host/ticket/command/ready",
+    "planfile://host/dsl/command/run"
+  ],
+  "mcp": true,
+  "a2a": true
+}
