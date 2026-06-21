@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Changed
+- Reuse the urirun host backend (`urirun.host.planfile_adapter`) instead of a bundled copy of
+  the logic; the connector now owns only the URI routes and JSON envelope.
+  urirun is the single source of truth. Routes/manifest/CLI unchanged.
+
 ### Added
 - Add follow-up tasks for IFURI-016 matrix coverage and richer Planfile route
   documentation.

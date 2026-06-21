@@ -4,10 +4,10 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 from typing import Any
 
 import urirun
+from urirun.host import planfile_adapter as _pa
 
 
 CONNECTOR_ID = "planfile"
@@ -18,47 +18,15 @@ def connector_manifest() -> dict[str, Any]:
     return urirun.load_manifest(__package__)
 
 
-def _imports() -> dict[str, Any]:
-    from planfile import (
-        DSLExecutor,
-        Planfile,
-        TicketExecution,
-        TicketExecutor,
-        TicketInputs,
-        TicketOutputs,
-        TicketSource,
-    )
-
-    return {
-        "DSLExecutor": DSLExecutor,
-        "Planfile": Planfile,
-        "TicketExecution": TicketExecution,
-        "TicketExecutor": TicketExecutor,
-        "TicketInputs": TicketInputs,
-        "TicketOutputs": TicketOutputs,
-        "TicketSource": TicketSource,
-    }
-
-
-def project_root(project: str | None = None) -> str:
-    return str(Path(project or ".").expanduser().resolve())
-
-
-def load_planfile(project: str | None = None):
-    return _imports()["Planfile"](project_root(project))
-
-
-def _model_dict(obj) -> dict[str, Any]:
-    return obj.model_dump(mode="json", exclude_none=True)
-
-
-def ticket_to_dict(ticket) -> dict[str, Any]:
-    return _model_dict(ticket) if ticket is not None else {}
-
-
-def normalize_priority(priority: str | None) -> str:
-    aliases = {"medium": "normal", "med": "normal", "default": "normal"}
-    return aliases.get((priority or "normal").lower(), (priority or "normal").lower())
+# Reuse the urirun host planfile backend (single source of truth) instead of
+# duplicating the planfile library wrappers.
+_imports = _pa._imports
+project_root = _pa.project_root
+load_planfile = _pa.load_planfile
+_model_dict = _pa._model_dict
+ticket_to_dict = _pa.ticket_to_dict
+normalize_priority = _pa.normalize_priority
+build_ticket_payload = _pa.build_ticket_payload
 
 
 def _split_csv(value: str | list[str] | None) -> list[str]:
@@ -67,64 +35,6 @@ def _split_csv(value: str | list[str] | None) -> list[str]:
     if isinstance(value, list):
         return [str(item) for item in value if str(item)]
     return [item.strip() for item in str(value).split(",") if item.strip()]
-
-
-def build_ticket_payload(payload: dict[str, Any]) -> dict[str, Any]:
-    imports = _imports()
-    data = dict(payload)
-    source_tool = data.pop("source_tool", None) or data.pop("source", None) or CONNECTOR_ID
-    source_context = data.pop("source_context", None) or {}
-    if "prompt" in data and "source_context" not in payload:
-        source_context.setdefault("prompt", data.get("prompt"))
-
-    labels = data.get("labels") or data.pop("label", []) or []
-    data["labels"] = _split_csv(labels)
-    data["priority"] = normalize_priority(data.get("priority"))
-
-    executor = data.pop("executor", None)
-    if executor is None and any(key in data for key in ("executor_kind", "executor_mode", "executor_handler")):
-        executor = imports["TicketExecutor"](
-            kind=data.pop("executor_kind", None) or "uri-flow",
-            mode=data.pop("executor_mode", None) or "automatic",
-            handler=data.pop("executor_handler", None),
-        )
-
-    execution = data.pop("execution", None)
-    if execution is None and any(key in data for key in ("queue", "execution_state", "assigned_to", "max_attempts")):
-        execution = imports["TicketExecution"](
-            queue=data.pop("queue", None) or "default",
-            state=data.pop("execution_state", None) or "pending",
-            assigned_to=data.pop("assigned_to", None),
-            max_attempts=int(data.pop("max_attempts", 1) or 1),
-        )
-
-    inputs = data.pop("inputs", None)
-    if inputs is None and any(key in data for key in ("prompt", "env_keys", "llm_model", "api_endpoint")):
-        inputs = imports["TicketInputs"](
-            prompt=data.pop("prompt", None),
-            env_keys=_split_csv(data.pop("env_keys", None)),
-            llm_model=data.pop("llm_model", None),
-            api_endpoint=data.pop("api_endpoint", None),
-        )
-
-    outputs = data.pop("outputs", None)
-    if outputs is None and any(key in data for key in ("artifacts", "notes", "result")):
-        outputs = imports["TicketOutputs"](
-            artifacts=_split_csv(data.pop("artifacts", None)),
-            notes=_split_csv(data.pop("notes", None)),
-            result=data.pop("result", None),
-        )
-
-    data["source"] = imports["TicketSource"](tool=str(source_tool), context=source_context)
-    if executor is not None:
-        data["executor"] = executor
-    if execution is not None:
-        data["execution"] = execution
-    if inputs is not None:
-        data["inputs"] = inputs
-    if outputs is not None:
-        data["outputs"] = outputs
-    return data
 
 
 def list_tickets(project: str = ".", sprint: str = "current", status: str = "", label: str = "", queue: str = "") -> dict[str, Any]:
