@@ -8,8 +8,12 @@ from .core import (
     connector_manifest,
     create_ticket,
     list_tickets,
+    main,
+    next_ticket,
     run_action,
     run_dsl,
+    show_ticket,
+    update_status,
     urirun_bindings,
 )
 
@@ -18,7 +22,11 @@ __all__ = [
     "connector_manifest",
     "create_ticket",
     "list_tickets",
+    "main",
+    "next_ticket",
     "run_action",
     "run_dsl",
+    "show_ticket",
+    "update_status",
     "urirun_bindings",
 ]

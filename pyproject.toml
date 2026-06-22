@@ -12,7 +12,7 @@ license = "Apache-2.0"
 authors = [{ name = "if-uri" }]
 dependencies = [
   "planfile>=0.1.103",
-  "urirun @ git+https://github.com/if-uri/urirun.git@v0.3.14#subdirectory=adapters/python",
+  "urirun @ git+https://github.com/if-uri/urirun.git#subdirectory=adapters/python",
 ]
 
 [project.optional-dependencies]
@@ -23,10 +23,10 @@ Homepage = "https://connect.ifuri.com/connectors/planfile"
 Repository = "https://github.com/if-uri/urirun-connector-planfile"
 
 [project.scripts]
-urirun-planfile = "urirun_connector_planfile.cli:main"
+urirun-planfile = "urirun_connector_planfile.core:main"
 
 [project.entry-points."urirun.bindings"]
-planfile = "urirun_connector_planfile:urirun_bindings"
+planfile = "urirun_connector_planfile.core:urirun_bindings"
 
 [tool.setuptools.packages.find]
 where = ["."]

@@ -2,30 +2,38 @@
   "id": "planfile",
   "name": "Planfile",
   "status": "available",
-  "uriSchemes": [
-    "task",
-    "planfile"
+  "category": "Tasks",
+  "summary": "Manage planfile tickets and run planfile DSL through task:// and planfile:// URI commands.",
+  "description": "Planfile exposes a project's planfile backlog as URI commands: list/next/show tickets, create tickets, transition ticket status (start/complete/fail/block/ready), and run planfile DSL. Routes operate on a project directory and execute out-of-process through the compiled registry.",
+  "useCases": [
+    "List or pick the next runnable ticket from a planfile sprint.",
+    "Create and transition planfile tickets from NL-to-URI workflows.",
+    "Run planfile DSL commands against a project directory."
   ],
-  "description": "Manage planfile tickets through URI commands.",
-  "version": "0.1.1",
-  "homepage": "https://connect.ifuri.com/connectors/planfile",
-  "repository": "https://github.com/if-uri/urirun-connector-planfile",
+  "requires": [
+    "planfile project directory"
+  ],
   "install": {
     "mode": "urirun-extra",
     "pipSpec": "urirun-connector-planfile @ git+https://github.com/if-uri/urirun-connector-planfile.git@v0.1.1"
   },
-  "routes": [
-    "task://host/tickets/query/list",
-    "task://host/ticket/query/next",
-    "task://host/ticket/query/show",
-    "task://host/ticket/command/create",
-    "task://host/ticket/command/start",
-    "task://host/ticket/command/complete",
-    "task://host/ticket/command/fail",
-    "task://host/ticket/command/block",
-    "task://host/ticket/command/ready",
-    "planfile://host/dsl/command/run"
+  "version": "0.1.1",
+  "homepage": "https://connect.ifuri.com/connectors/planfile",
+  "repository": "https://github.com/if-uri/urirun-connector-planfile",
+  "docsUrl": "https://github.com/if-uri/urirun-connector-planfile",
+  "keywords": [
+    "planfile",
+    "tickets",
+    "tasks",
+    "backlog",
+    "dsl"
   ],
+  "provenance": "verified",
+  "publisher": {
+    "name": "if-uri",
+    "url": "https://ifuri.com",
+    "github": "https://github.com/if-uri"
+  },
   "mcp": true,
   "a2a": true
 }

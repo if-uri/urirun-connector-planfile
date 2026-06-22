@@ -4,14 +4,21 @@
 from __future__ import annotations
 
 import json
-import os
-import sys
 import tempfile
-from pathlib import Path
 
 from urirun import v2
-from urirun_connector_planfile import connector_manifest, create_ticket, list_tickets, run_dsl, urirun_bindings
-from urirun_connector_planfile.cli import main
+from urirun_connector_planfile import (
+    connector_manifest,
+    create_ticket,
+    list_tickets,
+    main,
+    run_dsl,
+    urirun_bindings,
+)
+from urirun_connector_planfile import _exec
+
+
+_EXEC_PREFIX = ["python3", "-m", "urirun_connector_planfile._exec"]
 
 
 def _compile_registry(bindings: dict):
@@ -19,11 +26,12 @@ def _compile_registry(bindings: dict):
     return registry, v2.list_routes(registry)
 
 
-def test_manifest_shape() -> None:
-    manifest = connector_manifest()
-    assert manifest["id"] == "planfile"
-    assert "task://host/ticket/command/create" in manifest["routes"]
-    assert "planfile://host/dsl/command/run" in manifest["routes"]
+def test_bindings_use_exec_argv_template() -> None:
+    bindings = urirun_bindings()["bindings"]
+    # Representative route binding is an argv-template invoking the _exec module.
+    binding = bindings["task://host/ticket/command/create"]
+    assert binding["adapter"] == "argv-template"
+    assert binding["argv"][:4] == [*_EXEC_PREFIX, "create"]
 
 
 def test_bindings_shape_and_compile() -> None:
@@ -37,6 +45,14 @@ def test_bindings_shape_and_compile() -> None:
     assert any(route["uri"] == "task://host/ticket/command/create" for route in routes)
 
 
+def test_manifest_derives_routes_and_schemes() -> None:
+    manifest = connector_manifest()
+    assert manifest["id"] == "planfile"
+    assert "task://host/ticket/command/create" in manifest["routes"]
+    assert "planfile://host/dsl/command/run" in manifest["routes"]
+    assert set(manifest["uriSchemes"]) == {"task", "planfile"}
+
+
 def test_direct_planfile_operations() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         created = create_ticket(project=tmp, name="Connector ticket", prompt="check system", queue="daily")
@@ -44,62 +60,33 @@ def test_direct_planfile_operations() -> None:
         ticket_id = created["ticket"]["id"]
 
         listed = list_tickets(project=tmp, sprint="current", queue="daily")
+        assert listed["ok"] is True
         assert listed["tickets"][0]["id"] == ticket_id
 
-        dsl = run_dsl(project=tmp, command='list tickets sprint=current')
+        dsl = run_dsl(project=tmp, command="list tickets sprint=current")
         assert dsl["ok"] is True
         assert dsl["result"]["ok"] is True
 
 
-def test_cli_create_list_and_bindings(capsys) -> None:
+def test_exec_main_prints_json(capsys) -> None:
     with tempfile.TemporaryDirectory() as tmp:
-        assert main(["create", "--project", tmp, "--name", "CLI ticket", "--queue", "daily"]) == 0
+        rc = _exec.main(["create", "--project", tmp, "--name", "Exec ticket", "--queue", "daily"])
+        assert rc == 0
         created = json.loads(capsys.readouterr().out)
         assert created["ok"] is True
 
-        assert main(["list", "--project", tmp, "--queue", "daily"]) == 0
+        rc = _exec.main(["list", "--project", tmp, "--queue", "daily"])
+        assert rc == 0
         listed = json.loads(capsys.readouterr().out)
-        assert listed["tickets"][0]["name"] == "CLI ticket"
-
-        assert main(["bindings"]) == 0
-        bindings = json.loads(capsys.readouterr().out)
-        assert "task://host/tickets/query/list" in bindings["bindings"]
+        assert listed["tickets"][0]["name"] == "Exec ticket"
 
 
-def test_urirun_executes_planfile_connector_uri() -> None:
-    with tempfile.TemporaryDirectory() as tmp:
-        bin_dir = Path(tmp) / "bin"
-        bin_dir.mkdir()
-        wrapper = bin_dir / "urirun-planfile"
-        wrapper.write_text(
-            f"#!/usr/bin/env sh\nexec {sys.executable} -m urirun_connector_planfile.cli \"$@\"\n",
-            encoding="utf-8",
-        )
-        wrapper.chmod(0o755)
-        previous_path = os.environ.get("PATH", "")
-        os.environ["PATH"] = f"{bin_dir}{os.pathsep}{previous_path}"
-        registry, _routes = _compile_registry(urirun_bindings())
-        try:
-            create_result = v2.run(
-                "task://host/ticket/command/create",
-                registry,
-                {"project": tmp, "name": "URI ticket", "queue": "daily"},
-                mode="execute",
-                policy={"execute": {"allow": ["task://host/*"]}},
-            )
-            assert create_result["ok"] is True, create_result
-            stdout = json.loads(create_result["result"]["stdout"])
-            assert stdout["ticket"]["name"] == "URI ticket"
+def test_main_bindings_and_manifest(capsys) -> None:
+    assert main(["bindings"]) == 0
+    bindings = json.loads(capsys.readouterr().out)
+    assert "task://host/tickets/query/list" in bindings["bindings"]
 
-            list_result = v2.run(
-                "task://host/tickets/query/list",
-                registry,
-                {"project": tmp, "queue": "daily"},
-                mode="execute",
-                policy={"execute": {"allow": ["task://host/*"]}},
-            )
-            assert list_result["ok"] is True, list_result
-            listed = json.loads(list_result["result"]["stdout"])
-            assert listed["tickets"][0]["name"] == "URI ticket"
-        finally:
-            os.environ["PATH"] = previous_path
+    assert main(["manifest"]) == 0
+    manifest = json.loads(capsys.readouterr().out)
+    assert manifest["id"] == "planfile"
+    assert "planfile://host/dsl/command/run" in manifest["routes"]

@@ -1,16 +1,22 @@
 # Author: Tom Sapletta · https://tom.sapletta.com
 # Part of the ifURI solution.
 
+"""Out-of-process executor for planfile routes.
+
+The compiled v2 registry runs each route as an ``argv`` template that invokes
+``python3 -m urirun_connector_planfile._exec <subcommand> ...``. urirun spawns
+this template (no console-script / pip install required), so this module parses
+the route's flags and dispatches into ``core.run_action`` -- the same dispatcher
+the in-process helpers use -- then prints the connector's JSON result to stdout.
+"""
+
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 
-import urirun
-
-from .core import connector_manifest, run_action, urirun_bindings
-
-
+from . import core
 
 
 def _add_common(parser: argparse.ArgumentParser) -> None:
@@ -21,7 +27,9 @@ def _add_ticket_id(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--ticket-id", default="")
 
 
-def register(sub) -> None:
+def _build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(prog="urirun_connector_planfile._exec")
+    sub = parser.add_subparsers(dest="command", required=True)
 
     list_parser = sub.add_parser("list", help="List planfile tickets")
     _add_common(list_parser)
@@ -73,28 +81,19 @@ def register(sub) -> None:
     _add_common(dsl_parser)
     dsl_parser.add_argument("--command", required=True)
 
-
-def dispatch(args) -> int:
-    data = vars(args)
-    command = data.pop("command")
-    try:
-        result = run_action(command, **data)
-    except Exception as exc:  # noqa: BLE001 - connector CLI reports JSON errors.
-        urirun.connector_emit({"ok": False, "connector": "planfile", "action": command, "error": str(exc)})
-        return 2
-    urirun.connector_emit(result)
-    return 0 if result.get("ok") else 2
+    return parser
 
 
 def main(argv: list[str] | None = None) -> int:
-    return urirun.connector_cli(
-        "urirun-planfile",
-        manifest=connector_manifest,
-        bindings=urirun_bindings,
-        register=register,
-        dispatch=dispatch,
-        argv=argv,
-    )
+    args = _build_parser().parse_args(argv)
+    kwargs = {k: v for k, v in vars(args).items() if k != "command"}
+    try:
+        result = core.run_action(args.command, **kwargs)
+    except Exception as exc:  # noqa: BLE001 - connector exec reports JSON errors.
+        print(json.dumps({"ok": False, "connector": core.CONNECTOR_ID, "action": args.command, "error": str(exc)}))
+        return 2
+    print(json.dumps(result))
+    return 0 if result.get("ok") else 2
 
 
 if __name__ == "__main__":

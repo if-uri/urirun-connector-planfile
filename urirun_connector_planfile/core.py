@@ -1,9 +1,25 @@
 # Author: Tom Sapletta · https://tom.sapletta.com
 # Part of the ifURI solution.
 
+"""Planfile task routes for urirun.
+
+Each route is declared once with ``@TASK_CONNECTOR.command`` / ``@urirun.command``:
+the function signature becomes the input schema and the body returns the ``argv``
+template urirun runs. The template invokes this package's ``_exec`` module
+out-of-process (``python3 -m urirun_connector_planfile._exec <subcommand> ...``),
+so the route works through the file-based registry CLI (``urirun compile`` /
+``urirun run``) WITHOUT this connector being pip-installed -- as well as the
+in-process Python helpers (``list_tickets``, ``create_ticket``, ...) that
+``_exec`` and the tests call directly through ``run_action``.
+
+The manifest stays prose-only; ``routes``/``uriSchemes`` are derived from the
+declared routes.
+"""
+
 from __future__ import annotations
 
 import json
+from importlib import resources
 from typing import Any
 
 import urirun
@@ -13,9 +29,8 @@ from urirun.host import planfile_adapter as _pa
 CONNECTOR_ID = "planfile"
 TASK_CONNECTOR = urirun.connector(CONNECTOR_ID, scheme="task")
 
-
-def connector_manifest() -> dict[str, Any]:
-    return urirun.load_manifest(__package__)
+# argv prefix the compiled registry uses to execute a route out-of-process.
+_EXEC = ["python3", "-m", "urirun_connector_planfile._exec"]
 
 
 # Reuse the urirun host planfile backend (single source of truth) instead of
@@ -36,6 +51,8 @@ def _split_csv(value: str | list[str] | None) -> list[str]:
         return [str(item) for item in value if str(item)]
     return [item.strip() for item in str(value).split(",") if item.strip()]
 
+
+# --- route logic (real implementation) ------------------------------------
 
 def list_tickets(project: str = ".", sprint: str = "current", status: str = "", label: str = "", queue: str = "") -> dict[str, Any]:
     filters: dict[str, Any] = {}
@@ -121,6 +138,8 @@ def run_dsl(project: str = ".", command: str = "") -> dict[str, Any]:
     return {"ok": True, "connector": CONNECTOR_ID, "project": project_root(project), "result": result.to_dict()}
 
 
+# --- shared dispatch (CLI execute path + out-of-process _exec) -------------
+
 def run_action(action: str, **kwargs: Any) -> dict[str, Any]:
     if action == "list":
         return list_tickets(**kwargs)
@@ -137,19 +156,21 @@ def run_action(action: str, **kwargs: Any) -> dict[str, Any]:
     raise ValueError(f"unsupported action: {action}")
 
 
+# --- route declarations: schema + argv template all derived ---------------
+
 @TASK_CONNECTOR.command("tickets/query/list", meta={"label": "List planfile tickets"})
 def list_command(project: str = ".", sprint: str = "current", status: str = "", label: str = "", queue: str = "") -> list[str]:
-    return ["urirun-planfile", "list", "--project", "{project}", "--sprint", "{sprint}", "--status", "{status}", "--label", "{label}", "--queue", "{queue}"]
+    return [*_EXEC, "list", "--project", "{project}", "--sprint", "{sprint}", "--status", "{status}", "--label", "{label}", "--queue", "{queue}"]
 
 
 @TASK_CONNECTOR.command("ticket/query/next", meta={"label": "Get next runnable ticket"})
 def next_command(project: str = ".", sprint: str = "current", queue: str = "") -> list[str]:
-    return ["urirun-planfile", "next", "--project", "{project}", "--sprint", "{sprint}", "--queue", "{queue}"]
+    return [*_EXEC, "next", "--project", "{project}", "--sprint", "{sprint}", "--queue", "{queue}"]
 
 
 @TASK_CONNECTOR.command("ticket/query/show", meta={"label": "Show one ticket"})
 def show_command(project: str = ".", ticket_id: str = "") -> list[str]:
-    return ["urirun-planfile", "show", "--project", "{project}", "--ticket-id", "{ticket_id}"]
+    return [*_EXEC, "show", "--project", "{project}", "--ticket-id", "{ticket_id}"]
 
 
 @TASK_CONNECTOR.command("ticket/command/create", meta={"label": "Create planfile ticket"})
@@ -165,7 +186,7 @@ def create_command(
     max_attempts: int = 1,
 ) -> list[str]:
     return [
-        "urirun-planfile",
+        *_EXEC,
         "create",
         "--project",
         "{project}",
@@ -190,33 +211,69 @@ def create_command(
 
 @TASK_CONNECTOR.command("ticket/command/start", meta={"label": "Start ticket"})
 def start_command(project: str = ".", ticket_id: str = "") -> list[str]:
-    return ["urirun-planfile", "start", "--project", "{project}", "--ticket-id", "{ticket_id}"]
+    return [*_EXEC, "start", "--project", "{project}", "--ticket-id", "{ticket_id}"]
 
 
 @TASK_CONNECTOR.command("ticket/command/complete", meta={"label": "Complete ticket"})
 def complete_command(project: str = ".", ticket_id: str = "", note: str = "", result_json: str = "", artifacts: str = "") -> list[str]:
-    return ["urirun-planfile", "complete", "--project", "{project}", "--ticket-id", "{ticket_id}", "--note", "{note}", "--result-json", "{result_json}", "--artifacts", "{artifacts}"]
+    return [*_EXEC, "complete", "--project", "{project}", "--ticket-id", "{ticket_id}", "--note", "{note}", "--result-json", "{result_json}", "--artifacts", "{artifacts}"]
 
 
 @TASK_CONNECTOR.command("ticket/command/fail", meta={"label": "Fail ticket"})
 def fail_command(project: str = ".", ticket_id: str = "", error: str = "failed") -> list[str]:
-    return ["urirun-planfile", "fail", "--project", "{project}", "--ticket-id", "{ticket_id}", "--error", "{error}"]
+    return [*_EXEC, "fail", "--project", "{project}", "--ticket-id", "{ticket_id}", "--error", "{error}"]
 
 
 @TASK_CONNECTOR.command("ticket/command/block", meta={"label": "Block ticket"})
 def block_command(project: str = ".", ticket_id: str = "", note: str = "BLOCKED") -> list[str]:
-    return ["urirun-planfile", "block", "--project", "{project}", "--ticket-id", "{ticket_id}", "--note", "{note}"]
+    return [*_EXEC, "block", "--project", "{project}", "--ticket-id", "{ticket_id}", "--note", "{note}"]
 
 
 @TASK_CONNECTOR.command("ticket/command/ready", meta={"label": "Mark ticket ready"})
 def ready_command(project: str = ".", ticket_id: str = "", note: str = "") -> list[str]:
-    return ["urirun-planfile", "ready", "--project", "{project}", "--ticket-id", "{ticket_id}", "--note", "{note}"]
+    return [*_EXEC, "ready", "--project", "{project}", "--ticket-id", "{ticket_id}", "--note", "{note}"]
 
 
-@urirun.command("planfile://host/dsl/command/run", meta={"connector": CONNECTOR_ID, "label": "Run planfile DSL"})
+@urirun.command("planfile://host/dsl/command/run", meta={"connector": CONNECTOR_ID, "label": "Run planfile DSL", "cliAlias": "dsl"})
 def dsl_command(project: str = ".", command: str = "") -> list[str]:
-    return ["urirun-planfile", "dsl", "--project", "{project}", "--command", "{command}"]
+    return [*_EXEC, "dsl", "--project", "{project}", "--command", "{command}"]
 
+
+# --- authoring surface: bindings / manifest / CLI --------------------------
 
 def urirun_bindings() -> dict[str, Any]:
+    """Serializable v2 bindings for this connector (entry point: urirun.bindings)."""
     return urirun.connector_bindings(connector=CONNECTOR_ID)
+
+
+def connector_manifest() -> dict[str, Any]:
+    """Manifest prose (connector.manifest.json) merged with the derived route set."""
+    text = resources.files(__package__).joinpath("connector.manifest.json").read_text(encoding="utf-8")
+    manifest = json.loads(text)
+    bindings = urirun_bindings()["bindings"]
+    manifest["routes"] = sorted(bindings)
+    manifest["uriSchemes"] = sorted({uri.split("://", 1)[0] for uri in bindings})
+    return manifest
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Console-script entry point: ``bindings``/``manifest`` plus the route
+    subcommands (delegated to the out-of-process executor)."""
+    import sys
+
+    args = list(sys.argv[1:] if argv is None else argv)
+    if args and args[0] == "bindings":
+        print(json.dumps(urirun_bindings(), indent=2))
+        return 0
+    if args and args[0] == "manifest":
+        print(json.dumps(connector_manifest(), indent=2))
+        return 0
+    from ._exec import main as _exec_main
+
+    return _exec_main(args)
+
+
+if __name__ == "__main__":
+    import sys
+
+    raise SystemExit(main(sys.argv[1:]))
