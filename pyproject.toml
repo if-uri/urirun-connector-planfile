@@ -12,7 +12,7 @@ license = "Apache-2.0"
 authors = [{ name = "if-uri" }]
 dependencies = [
   "planfile>=0.1.103",
-  "urirun @ git+https://github.com/if-uri/urirun.git#subdirectory=adapters/python",
+  "urirun>=0.4.14",
 ]
 
 [project.optional-dependencies]
