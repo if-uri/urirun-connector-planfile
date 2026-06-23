@@ -35,5 +35,24 @@
     "github": "https://github.com/if-uri"
   },
   "mcp": true,
-  "a2a": true
+  "a2a": true,
+  "routes": [
+    "planfile://host/dsl/command/run",
+    "task://host/ticket/command/block",
+    "task://host/ticket/command/complete",
+    "task://host/ticket/command/create",
+    "task://host/ticket/command/fail",
+    "task://host/ticket/command/ready",
+    "task://host/ticket/command/start",
+    "task://host/ticket/query/next",
+    "task://host/ticket/query/show",
+    "task://host/tickets/query/list"
+  ],
+  "uriSchemes": [
+    "planfile",
+    "task"
+  ],
+  "adapterKinds": [
+    "local-function"
+  ]
 }
