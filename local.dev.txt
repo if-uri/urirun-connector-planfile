@@ -4,7 +4,7 @@
 # deps declared: 3 | with local source: 2
 
 ## LOCAL DEPS  (dep | required | local source (version) | installed | status)
-planfile | >=0.1.103 | /home/tom/github/semcod/planfile (0.1.106) | 0.1.106 editable | OK-EDITABLE  [pyproject.toml]
-urirun | >=0.4.14 | /home/tom/github/if-uri/urirun/adapters/python (0.4.190) | 0.4.190 editable | OK-EDITABLE  [pyproject.toml]
+planfile | >=0.1.103 | /home/tom/github/semcod/planfile (0.1.106) | 0.1.106 editable @if-uri/venv | OK-EDITABLE  [pyproject.toml]
+urirun | >=0.4.14 | /home/tom/github/if-uri/urirun/adapters/python (0.4.190) | 0.4.190 editable @if-uri/venv | OK-EDITABLE  [pyproject.toml]
 
 ## EXTERNAL DEPS (no local source, 1): pytest
