@@ -1,0 +1,11 @@
+# local.dev.txt — locally developed dependencies of this project (generated 2026-07-04)
+# by ~/github/local.dev.sh — DO NOT EDIT; see ~/github/local.dev.md
+# project: urirun-connector-planfile 0.1.1 (python) at /home/tom/github/if-uri/urirun-connector-planfile
+# deps declared: 3 | with local source: 3
+
+## LOCAL DEPS  (dep | required | local source (version) | installed | status)
+planfile | >=0.1.103 | /home/tom/github/semcod/2026/planfile (0.1.48) | 0.1.103 non-editable | STALE-INSTALL (local 0.1.48) -> fix: pip install -e /home/tom/github/semcod/2026/planfile  [pyproject.toml]
+planfile | >=0.1.103 | /home/tom/github/semcod/planfile (0.1.106) | 0.1.103 non-editable | STALE-INSTALL (local 0.1.106) -> fix: pip install -e /home/tom/github/semcod/planfile  [pyproject.toml]
+urirun | >=0.4.14 | /home/tom/github/if-uri/urirun/adapters/python (0.4.190) | 0.4.190 editable | OK-EDITABLE  [pyproject.toml]
+
+## EXTERNAL DEPS (no local source, 1): pytest
