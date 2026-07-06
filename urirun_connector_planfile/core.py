@@ -114,7 +114,10 @@ def update_status(project: str, ticket_id: str, status: str, note: str = "", res
     elif status == "fail":
         ticket = pf.fail_ticket(ticket_id, error or "failed")
     elif status == "block":
-        ticket = pf.update_ticket(ticket_id, status="blocked", description=note or "BLOCKED")
+        if hasattr(pf, "block_ticket"):
+            ticket = pf.block_ticket(ticket_id, reason=note or "BLOCKED")
+        else:
+            ticket = pf.update_ticket(ticket_id, status="blocked", description=note or "BLOCKED")
     elif status == "ready":
         ticket = pf.ready_ticket(ticket_id, note=note or None)
     else:
