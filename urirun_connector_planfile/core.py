@@ -45,6 +45,7 @@ project_root = _pa.project_root
 load_planfile = _pa.load_planfile
 ticket_to_dict = _pa.ticket_to_dict
 build_ticket_payload = _pa.build_ticket_payload
+get_ticket_urls = _pa.get_ticket_urls
 
 
 def _split_csv(value: str | list[str] | None) -> list[str]:
@@ -84,8 +85,49 @@ def show_ticket(project: str = ".", ticket_id: str = "") -> dict[str, Any]:
     if not ticket_id:
         return urirun.fail("ticket_id is required", connector=CONNECTOR_ID)
     ticket = load_planfile(project).get_ticket(ticket_id)
+    tdict = ticket_to_dict(ticket) if ticket else None
     return {"ok": True, "connector": CONNECTOR_ID, "project": project_root(project),
-            "ticket": ticket_to_dict(ticket) if ticket else None}
+            "ticket": tdict}
+
+@conn.handler("ticket/query/urls", isolated=True, meta={"label": "Get URLs for ticket history and LLM conversations"})
+def ticket_urls(project: str = ".", ticket_id: str = "") -> dict[str, Any]:
+    if not ticket_id:
+        return urirun.fail("ticket_id is required", connector=CONNECTOR_ID)
+    from urirun.host import planfile_adapter as _pa
+    urls = _pa.get_ticket_urls(ticket_id)
+    return {"ok": True, "connector": CONNECTOR_ID, "project": project_root(project), "ticket_id": ticket_id, "urls": urls}
+
+
+@conn.handler("ticket/query/history-links", isolated=True, meta={"label": "Get persisted history links (changes + LLM) for a ticket, including full URI registry context"})
+def ticket_history_links(project: str = ".", ticket_id: str = "") -> dict[str, Any]:
+    if not ticket_id:
+        return urirun.fail("ticket_id is required", connector=CONNECTOR_ID)
+    from urirun.host import planfile_adapter as _pa
+    urls = _pa.get_ticket_urls(ticket_id)
+    # Add full registry snapshot for the ticket context (relevant URIs + general)
+    try:
+        import urirun
+        reg = urirun.get_registry() or {}
+        # lightweight: list key URIs related to tickets, llm, history
+        relevant_uris = [r for r in (reg.get("routes") or []) if any(k in str(r).lower() for k in ["ticket", "history", "llm", "chat", "planfile", "work"])]
+    except Exception:
+        relevant_uris = []
+    return {
+        "ok": True,
+        "connector": CONNECTOR_ID,
+        "project": project_root(project),
+        "ticket_id": ticket_id,
+        "urls": urls,
+        "full_uri_registry_context": relevant_uris or "see /api/routes or urirun list for full registry"
+    }
+
+# Also enrich list and show to guarantee urls (ticket_to_dict does it, but explicit for clarity)
+def _ensure_urls(t: dict | None) -> dict | None:
+    if t and "urls" not in t and (t.get("id") or t.get("ticket_id")):
+        from urirun.host import planfile_adapter as _pa
+        t = dict(t)
+        t["urls"] = _pa.get_ticket_urls(t.get("id") or t.get("ticket_id"))
+    return t
 
 
 @conn.handler("ticket/command/create", isolated=True, meta={"label": "Create planfile ticket"})
