@@ -68,6 +68,7 @@ def list_tickets(project: str = ".", sprint: str = "current", status: str = "", 
     tickets = [ticket_to_dict(t) for t in load_planfile(project).list_tickets(sprint=sprint, **filters)]
     if queue:
         tickets = [t for t in tickets if (t.get("execution") or {}).get("queue", "default") == queue]
+    # Support archived view: if status=archive or sprint=archive, returns archived ones
     return {"ok": True, "connector": CONNECTOR_ID, "project": project_root(project), "tickets": tickets}
 
 
@@ -148,6 +149,16 @@ def block(project: str = ".", ticket_id: str = "", note: str = "BLOCKED") -> dic
 @conn.handler("ticket/command/ready", isolated=True, meta={"label": "Mark ticket ready"})
 def ready(project: str = ".", ticket_id: str = "", note: str = "") -> dict[str, Any]:
     return update_status(project, ticket_id, "ready", note=note)
+
+
+@conn.handler("ticket/command/archive", isolated=True, meta={"label": "Archive ticket to 'archive' sprint (hides from main dashboard view)"})
+def archive(project: str = ".", ticket_id: str = "", note: str = "") -> dict[str, Any]:
+    if not ticket_id:
+        return urirun.fail("ticket_id is required", connector=CONNECTOR_ID)
+    from urirun.host import planfile_adapter as pa
+    t = pa.archive_ticket(project, ticket_id, note=note or None)
+    return {"ok": True, "connector": CONNECTOR_ID, "project": project_root(project),
+            "ticket": t, "archived": True}
 
 
 # Declared with the full URI (different scheme) but bound to this connector id so
