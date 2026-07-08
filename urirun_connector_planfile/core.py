@@ -107,9 +107,14 @@ def ticket_history_links(project: str = ".", ticket_id: str = "") -> dict[str, A
     # Add full registry snapshot for the ticket context (relevant URIs + general)
     try:
         import urirun
-        reg = urirun.get_registry() or {}
-        # lightweight: list key URIs related to tickets, llm, history
-        relevant_uris = [r for r in (reg.get("routes") or []) if any(k in str(r).lower() for k in ["ticket", "history", "llm", "chat", "planfile", "work"])]
+        from urirun_connector_router.routing import routes_from_registry
+        reg = {}
+        try:
+            reg = urirun.compile_registry({}) or {}
+        except:
+            pass
+        full_routes = routes_from_registry(reg) if reg else []
+        relevant_uris = [r for r in full_routes if any(k in str(r.get("uri","")).lower() for k in ["ticket", "history", "llm", "chat", "planfile", "work", "kvm", "ui"])]
     except Exception:
         relevant_uris = []
     return {
