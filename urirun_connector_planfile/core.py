@@ -103,24 +103,26 @@ def create_ticket(project: str = ".", name: str = "", description: str = "", pri
 
 
 def update_status(project: str, ticket_id: str, status: str, note: str = "", result_json: str = "",
-                  artifacts: str = "", error: str = "") -> dict[str, Any]:
+                  artifacts: str = "", error: str = "", reason: str = "", actor: str = "") -> dict[str, Any]:
     if not ticket_id:
         return urirun.fail("ticket_id is required", connector=CONNECTOR_ID)
     pf = load_planfile(project)
+    r = reason or note or ""
+    a = actor or ""
     if status == "start":
-        ticket = pf.start_ticket(ticket_id)
+        ticket = pf.start_ticket(ticket_id, reason=r or None, actor=a or None)
     elif status == "complete":
         result = json.loads(result_json) if result_json else None
-        ticket = pf.complete_ticket(ticket_id, note=note or None, result=result, artifacts=_split_csv(artifacts))
+        ticket = pf.complete_ticket(ticket_id, note=note or None, result=result, artifacts=_split_csv(artifacts), reason=r or None, actor=a or None)
     elif status == "fail":
-        ticket = pf.fail_ticket(ticket_id, error or "failed")
+        ticket = pf.fail_ticket(ticket_id, error or "failed", reason=r or None, actor=a or None)
     elif status == "block":
         if hasattr(pf, "block_ticket"):
-            ticket = pf.block_ticket(ticket_id, reason=note or "BLOCKED")
+            ticket = pf.block_ticket(ticket_id, reason=r or note or "BLOCKED", actor=a or None)
         else:
-            ticket = pf.update_ticket(ticket_id, status="blocked", description=note or "BLOCKED")
+            ticket = pf.update_ticket(ticket_id, status="blocked", description=note or "BLOCKED", reason=r or None, actor=a or None)
     elif status == "ready":
-        ticket = pf.ready_ticket(ticket_id, note=note or None)
+        ticket = pf.ready_ticket(ticket_id, note=note or None, reason=r or None, actor=a or None)
     else:
         return urirun.fail(f"unsupported status action: {status}", connector=CONNECTOR_ID)
     return {"ok": True, "connector": CONNECTOR_ID, "project": project_root(project), "ticket": ticket_to_dict(ticket)}
@@ -132,31 +134,31 @@ def start(project: str = ".", ticket_id: str = "") -> dict[str, Any]:
 
 
 @conn.handler("ticket/command/complete", isolated=True, meta={"label": "Complete ticket"})
-def complete(project: str = ".", ticket_id: str = "", note: str = "", result_json: str = "", artifacts: str = "") -> dict[str, Any]:
-    return update_status(project, ticket_id, "complete", note=note, result_json=result_json, artifacts=artifacts)
+def complete(project: str = ".", ticket_id: str = "", note: str = "", result_json: str = "", artifacts: str = "", reason: str = "", actor: str = "") -> dict[str, Any]:
+    return update_status(project, ticket_id, "complete", note=note, result_json=result_json, artifacts=artifacts, reason=reason, actor=actor)
 
 
 @conn.handler("ticket/command/fail", isolated=True, meta={"label": "Fail ticket"})
-def fail(project: str = ".", ticket_id: str = "", error: str = "failed") -> dict[str, Any]:
-    return update_status(project, ticket_id, "fail", error=error)
+def fail(project: str = ".", ticket_id: str = "", error: str = "failed", reason: str = "", actor: str = "") -> dict[str, Any]:
+    return update_status(project, ticket_id, "fail", error=error, reason=reason, actor=actor)
 
 
 @conn.handler("ticket/command/block", isolated=True, meta={"label": "Block ticket"})
-def block(project: str = ".", ticket_id: str = "", note: str = "BLOCKED") -> dict[str, Any]:
-    return update_status(project, ticket_id, "block", note=note)
+def block(project: str = ".", ticket_id: str = "", note: str = "BLOCKED", reason: str = "", actor: str = "") -> dict[str, Any]:
+    return update_status(project, ticket_id, "block", note=note, reason=reason, actor=actor)
 
 
 @conn.handler("ticket/command/ready", isolated=True, meta={"label": "Mark ticket ready"})
-def ready(project: str = ".", ticket_id: str = "", note: str = "") -> dict[str, Any]:
-    return update_status(project, ticket_id, "ready", note=note)
+def ready(project: str = ".", ticket_id: str = "", note: str = "", reason: str = "", actor: str = "") -> dict[str, Any]:
+    return update_status(project, ticket_id, "ready", note=note, reason=reason, actor=actor)
 
 
 @conn.handler("ticket/command/archive", isolated=True, meta={"label": "Archive ticket to 'archive' sprint (hides from main dashboard view)"})
-def archive(project: str = ".", ticket_id: str = "", note: str = "") -> dict[str, Any]:
+def archive(project: str = ".", ticket_id: str = "", note: str = "", reason: str = "", actor: str = "") -> dict[str, Any]:
     if not ticket_id:
         return urirun.fail("ticket_id is required", connector=CONNECTOR_ID)
     from urirun.host import planfile_adapter as pa
-    t = pa.archive_ticket(project, ticket_id, note=note or None)
+    t = pa.archive_ticket(project, ticket_id, note=note or None, reason=reason or None, actor=actor or None)
     return {"ok": True, "connector": CONNECTOR_ID, "project": project_root(project),
             "ticket": t, "archived": True}
 
